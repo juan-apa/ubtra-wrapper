@@ -18,7 +18,7 @@
  */
 
 // Pages starting with this URL are opened within the app, others in the system web browser (include any trailing slash!)
-var LANDING_URL= "https://thequestionmark.github.io/cordova-web-wrap/";
+var LANDING_URL = "https://ubtra-staging.herokuapp.com/";
 // URLs listed here open in the app, others in the system web browser.
 // Both absolute and host-relative URLs (with respect to LANDING_URL) are allowed.
 // The URL on test includes a leading slash, but does not include query string or hash.
@@ -30,7 +30,7 @@ var LOCAL_URLS = "/*";
 // Regular expression for parsing full URLs, returning: base, path, query, hash.
 var SPLIT_URL_RE = /^([^:/]+:\/\/[^/]+)(\/[^?]*)(?:\?([^#]*))?(?:#(.*))?$/i;
 // Base URL for matching, derived from LANDING_URL (without trailing slash).
-var BASE_URL     = LANDING_URL.match(SPLIT_URL_RE)[1];
+var BASE_URL = LANDING_URL.match(SPLIT_URL_RE)[1];
 
 // Main functionality using a state machine.
 var Fsm = machina.Fsm.extend({
@@ -43,67 +43,67 @@ var Fsm = machina.Fsm.extend({
 
     // We're starting up (Cordova may not be ready yet).
     "starting": {
-      _onEnter      : function() { this.onStarting(); },
-      "deviceready" : "started",
+      _onEnter: function () { this.onStarting(); },
+      "deviceready": "started",
     },
 
     // Setup everything and start loading the website.
     "started": {
-      _onEnter       : function() { this.onStarted(); },
-      "conn.offline" : "offline.blank",
+      _onEnter: function () { this.onStarted(); },
+      "conn.offline": "offline.blank",
     },
 
     // Load the page we want to show.
     "loading": {
-      _onEnter         : function(e)     { this.onLoading(e); },
-      "app.beforeload" : function(e, cb) { this.onNavigate(e, cb); },
-      "app.loadstop"   : "loaded",
-      "app.loaderror"  : "failed",
-      "pause"          : "paused",
-      "conn.offline"   : "offline.blank",
+      _onEnter: function (e) { this.onLoading(e); },
+      "app.beforeload": function (e, cb) { this.onNavigate(e, cb); },
+      "app.loadstop": "loaded",
+      "app.loaderror": "failed",
+      "pause": "paused",
+      "conn.offline": "offline.blank",
     },
 
     // Paused during page load.
     // Sometimes loading continues at this stage, so we need handlers for these events.
     "paused": {
-      "resume"        : function()  { this.onResume(); },
-      "app.loadstop"  : "loaded",
-      "app.loaderror" : "failed",
-      "conn.offline"  : "offline.blank",
+      "resume": function () { this.onResume(); },
+      "app.loadstop": "loaded",
+      "app.loaderror": "failed",
+      "conn.offline": "offline.blank",
     },
 
     // Page was succesfully loaded in the inAppBrowser.
     "loaded": {
-      _onEnter         : function()      { this.onLoaded(); },
-      "app.beforeload" : function(e, cb) { this.onNavigate(e, cb); },
-      "app.exit"       : function()      { this.onBrowserBack(); }, // top of navigation and back pressed
-      "conn.offline"   : "offline.loaded",
+      _onEnter: function () { this.onLoaded(); },
+      "app.beforeload": function (e, cb) { this.onNavigate(e, cb); },
+      "app.exit": function () { this.onBrowserBack(); }, // top of navigation and back pressed
+      "conn.offline": "offline.loaded",
     },
 
     // Page load failed.
     "failed": {
-      _onEnter       : function() { this.onFailed(); },
-      "retry"        : function() { this.load(null, "loading"); },
-      "conn.offline" : "offline.blank",
+      _onEnter: function () { this.onFailed(); },
+      "retry": function () { this.load(null, "loading"); },
+      "conn.offline": "offline.blank",
     },
 
     // Offline without a page loaded.
     "offline.blank": {
-      _onEnter      : function() { this.onOfflineBlank(); },
-      "conn.online" : function() { this.load(); },
+      _onEnter: function () { this.onOfflineBlank(); },
+      "conn.online": function () { this.load(); },
     },
 
     // Offline and a page is loaded.
     "offline.loaded": {
-      _onEnter      : function() { this.onOfflineLoaded(); },
-      "conn.online" : "loaded",
+      _onEnter: function () { this.onOfflineLoaded(); },
+      "conn.online": "loaded",
     }
   },
 
-  initialize: function() {
+  initialize: function () {
     this.setLocalUrls(LOCAL_URLS);
     // Log state transitions.
-    this.on("*", function(event, data) {
+    this.on("*", function (event, data) {
       if (event === "transition" || event === "transitioned") {
         var action = data.action ? data.action.split(".").slice(1).join(".") : "(none)";
         debug(event + " from " + data.fromState + " to " + data.toState + " by " + action);
@@ -114,27 +114,27 @@ var Fsm = machina.Fsm.extend({
     });
   },
 
-  onStarting: function() {
+  onStarting: function () {
     document.addEventListener("deviceready", this.handle.bind(this, "deviceready"), false);
   },
 
-  onStarted: function() {
-    document.addEventListener("online",  wrapEventListener(this.handle.bind(this, "conn.online")), false);
+  onStarted: function () {
+    document.addEventListener("online", wrapEventListener(this.handle.bind(this, "conn.online")), false);
     document.addEventListener("offline", wrapEventListener(this.handle.bind(this, "conn.offline")), false);
     // retry button (debounce 0.5s)
     document.getElementById("retry").addEventListener("click", _.debounce(this.handle.bind(this, "retry"), 500), false);
     // run handler on main thread (iOS) - https://cordova.apache.org/docs/en/latest/cordova/events/events.html#ios-quirks
-    document.addEventListener("pause",   wrapEventListener(this.handle.bind(this, "pause")), false);
-    document.addEventListener("resume",  wrapEventListener(this.handle.bind(this, "resume")), false);
+    document.addEventListener("pause", wrapEventListener(this.handle.bind(this, "pause")), false);
+    document.addEventListener("resume", wrapEventListener(this.handle.bind(this, "resume")), false);
 
     // allow state transition to happen after this one
-    setTimeout(function() {
+    setTimeout(function () {
       if (navigator.splashscreen) navigator.splashscreen.hide();
       this.load(LANDING_URL, "loading");
     }.bind(this), 0);
   },
 
-  load: function(url, messageCode) {
+  load: function (url, messageCode) {
     var _url = url || this.appLastUrl || LANDING_URL;
 
     this.appLastUrl = _url;
@@ -143,7 +143,7 @@ var Fsm = machina.Fsm.extend({
     this.transition("loading", messageCode);
   },
 
-  _load: function(url) {
+  _load: function (url) {
     if (!this.app) {
       // When there is no inAppBrowser yet, open it.
       debug("load new: " + url);
@@ -155,19 +155,20 @@ var Fsm = machina.Fsm.extend({
     }
   },
 
-  onLoading: function(messageCode) {
+  onLoading: function (messageCode) {
     // if no code is given, it means: keep the same message as before (relevant for e.g. redirects)
     if (messageCode) this.showMessage(messageCode);
   },
 
-  onLoaded: function(e) {
+  onLoaded: function (e) {
     // Allow LOCAL_URLS to be set by the page.
-    this.app.executeScript({ code:
-      '(function () {\n' +
-      '  var el = document.querySelector("[data-app-local-urls]");\n' +
-      '  if (el) return el.getAttribute("data-app-local-urls");\n' +
-      '})();'
-    }, function(localUrls) {
+    this.app.executeScript({
+      code:
+        '(function () {\n' +
+        '  var el = document.querySelector("[data-app-local-urls]");\n' +
+        '  if (el) return el.getAttribute("data-app-local-urls");\n' +
+        '})();'
+    }, function (localUrls) {
       if (localUrls && localUrls[0]) this.setLocalUrls(localUrls[0]);
     }.bind(this));
     // Show the page.
@@ -175,7 +176,7 @@ var Fsm = machina.Fsm.extend({
     this.app.show();
   },
 
-  onNavigate: function(e, cb) {
+  onNavigate: function (e, cb) {
     if (e.url.match(/^app:\/\/mobile-scan\b/)) {
       // barcode scanner opened
       var params = parseQueryString(e.url) || {};
@@ -191,34 +192,34 @@ var Fsm = machina.Fsm.extend({
     }
   },
 
-  onBrowserBack: function() {
+  onBrowserBack: function () {
     debug("final back pressed, closing app");
     navigator.app.exitApp();
   },
 
-  onResume: function() {
+  onResume: function () {
     this.load();
   },
 
-  onFailed: function() {
+  onFailed: function () {
     this.showMessage("failed");
   },
 
-  onOfflineBlank: function() {
+  onOfflineBlank: function () {
     this.showMessage("offline");
   },
 
-  onOfflineLoaded: function() {
+  onOfflineLoaded: function () {
     this.showMessage("offline");
   },
 
-  openBrowser: function(url) {
+  openBrowser: function (url) {
     var _url = url || this.appLastUrl || LANDING_URL;
     this.app = cordova.InAppBrowser.open(_url, "_blank", "location=no,zoom=no,shouldPauseOnSuspend=yes,toolbar=no,hidden=yes,beforeload=yes");
     // Connect state-machine to inAppBrowser events.
-    this.app.addEventListener("loadstart",    wrapEventListener(this.handle.bind(this, "app.loadstart")), false);
-    this.app.addEventListener("loadstop",     wrapEventListener(this.handle.bind(this, "app.loadstop")), false);
-    this.app.addEventListener("loaderror",    wrapEventListener(function(e) {
+    this.app.addEventListener("loadstart", wrapEventListener(this.handle.bind(this, "app.loadstart")), false);
+    this.app.addEventListener("loadstop", wrapEventListener(this.handle.bind(this, "app.loadstop")), false);
+    this.app.addEventListener("loaderror", wrapEventListener(function (e) {
       if (window.cordova.platformId === 'ios' && e.code === -999) {
         debug("ignoring cancelled load on iOS: " + e.url + ": " + e.message);
       } else {
@@ -226,16 +227,16 @@ var Fsm = machina.Fsm.extend({
         this.handle("app.loaderror", e);
       }
     }.bind(this)), false);
-    this.app.addEventListener("beforeload",   wrapEventListener(this.handle.bind(this, "app.beforeload")), false);
-    this.app.addEventListener("exit",         wrapEventListener(this.handle.bind(this, "app.exit")), false);
+    this.app.addEventListener("beforeload", wrapEventListener(this.handle.bind(this, "app.beforeload")), false);
+    this.app.addEventListener("exit", wrapEventListener(this.handle.bind(this, "app.exit")), false);
   },
 
-  openSystemBrowser: function(url) {
+  openSystemBrowser: function (url) {
     var launcher = window.plugins.launcher;
     // Need FLAG_ACTIVITY_NEW_TASK on Android 6 to make it clear that the page is
     // opened in another app. Also, the back button doesn't bring you back from
     // the system web browser to this app on Android 6, with this flag it does.
-    launcher.launch({uri: url, flags: launcher.FLAG_ACTIVITY_NEW_TASK}, function(data) {
+    launcher.launch({ uri: url, flags: launcher.FLAG_ACTIVITY_NEW_TASK }, function (data) {
       if (data.isLaunched) {
         debug("successfully opened external link: " + url);
       } else if (data.isActivityDone) {
@@ -243,15 +244,15 @@ var Fsm = machina.Fsm.extend({
       } else {
         debug("unknown response when opening external link: " + JSON.stringify(data));
       }
-    }, function(errMsg) {
+    }, function (errMsg) {
       debug("could not open external link: " + errMsg);
     });
   },
 
-  openScan: function(returnUrlTemplate) {
+  openScan: function (returnUrlTemplate) {
     debug("openScan: " + returnUrlTemplate);
     cordova.plugins.barcodeScanner.scan(
-      function(result) {
+      function (result) {
         if (result.cancelled) {
           debug("scan cancelled");
           // necessary on iOS, see below
@@ -261,7 +262,7 @@ var Fsm = machina.Fsm.extend({
           this.openScanUrl(returnUrlTemplate, result.text);
         }
       }.bind(this),
-      function(error) {
+      function (error) {
         debug("scan failed: " + error);
         alert("Scan failed: " + error);
         // necessary on iOS, see below
@@ -278,7 +279,7 @@ var Fsm = machina.Fsm.extend({
     if (window.cordova.platformId === 'ios') this.showMessage("scanning");
   },
 
-  openScanUrl: function(returnUrlTemplate, barcode) {
+  openScanUrl: function (returnUrlTemplate, barcode) {
     if (!returnUrlTemplate) {
       debug("scan: missing query parameter for the return url, please in include 'ret'");
       alert("Scan failed (return url missing)");
@@ -297,28 +298,28 @@ var Fsm = machina.Fsm.extend({
   },
 
   // Show message.
-  showMessage: function(code) {
+  showMessage: function (code) {
     debug("showMessage: " + code);
     if (this.app && !code) this.app.show();
     document.getElementById("event-starting").style.display = code === "starting" ? "block" : "none";
-    document.getElementById("event-offline" ).style.display = code === "offline"  ? "block" : "none";
-    document.getElementById("event-loading" ).style.display = code === "loading"  ? "block" : "none";
+    document.getElementById("event-offline").style.display = code === "offline" ? "block" : "none";
+    document.getElementById("event-loading").style.display = code === "loading" ? "block" : "none";
     document.getElementById("event-scanning").style.display = code === "scanning" ? "block" : "none";
-    document.getElementById("event-finding" ).style.display = code === "finding"  ? "block" : "none";
-    document.getElementById("event-failure" ).style.display = code === "failed"   ? "block" : "none";
+    document.getElementById("event-finding").style.display = code === "finding" ? "block" : "none";
+    document.getElementById("event-failure").style.display = code === "failed" ? "block" : "none";
     if (this.app && code) this.app.hide();
   },
 
   // Update local URLs and the regular expression for testing them.
-  setLocalUrls: function(urls) {
+  setLocalUrls: function (urls) {
     debug("setLocalUrls: " + urls);
     this.localUrls = urls;
-    this.localUrlRe = new RegExp('^(' + urls.trim().split(/\s+/).map(function(s) {
+    this.localUrlRe = new RegExp('^(' + urls.trim().split(/\s+/).map(function (s) {
       return s.replace(/([.*+?^${}()|\[\]\/\\])/g, '\\$1').replace('\\*', '.*');
     }).join('|') + ')$');
   },
 
-  isLocalUrl: function(url) {
+  isLocalUrl: function (url) {
     var parts = url.match(SPLIT_URL_RE);
     if (parts) {
       var base = parts[1], path = parts[2];

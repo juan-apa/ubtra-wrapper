@@ -1,6 +1,6 @@
 {
-  "name": "com.example.webwrap",
-  "displayName": "Example",
+  "name": "com.example.ubtra_cordova",
+  "displayName": "Uber Track",
   "version": "1.0.0",
   "description": "An example Cordova app wrapping a mobile website.",
   "homepage": "https://github.com/q-m/cordova-web-wrap",
@@ -11,11 +11,7 @@
   },
   "author": "wvengen",
   "dependencies": {
-    "cordova-plugin-app-launcher": "^0.4.0",
-    "cordova-plugin-inappbrowser": "git+https://github.com/apache/cordova-plugin-inappbrowser.git#94fec84d5c81e64b89b4c216d02938d58ba61dbc",
-    "cordova-plugin-network-information": "^2.0.1",
-    "cordova-plugin-whitelist": "^1.3.3",
-    "phonegap-plugin-barcodescanner": "^7.1.2"
+    "cordova-icon": "^1.0.0"
   },
   "cordova": {
     "plugins": {
@@ -27,6 +23,16 @@
       },
       "cordova-plugin-app-launcher": {}
     },
-    "platforms": []
+    "platforms": [
+      "android"
+    ]
+  },
+  "devDependencies": {
+    "cordova-android": "^9.0.0",
+    "cordova-plugin-app-launcher": "^0.4.0",
+    "cordova-plugin-inappbrowser": "git+https://github.com/apache/cordova-plugin-inappbrowser.git#94fec84d5c81e64b89b4c216d02938d58ba61dbc",
+    "cordova-plugin-network-information": "^2.0.2",
+    "cordova-plugin-whitelist": "^1.3.4",
+    "phonegap-plugin-barcodescanner": "^7.1.2"
   }
 }
